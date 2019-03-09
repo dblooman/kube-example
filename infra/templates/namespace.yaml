@@ -1,0 +1,7 @@
+{{- $createNamespace := default false .Values.createNamespace }}
+{{- if $createNamespace }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace }}
+{{- end }}

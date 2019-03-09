@@ -1,0 +1,41 @@
+nameOverride: "kube-example"
+fullnameOverride: "kube-example"
+
+namespace: kube-example
+
+replicaCount: 3
+
+envname: local
+service_domain: demo
+service_group: default
+service_name: demo
+service_role: kube-app
+
+image:
+  repository: davey/kube-example
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 8080
+
+resources:
+  limits:
+    memory: "2G"
+    cpu: "1000m"
+  requests:
+    memory: "1G"
+    cpu: "500m"
+
+secrets:
+  EXAMPLE: "foobar"
+
+serviceConfig:
+  EXAMPLECONFIG: "bar"
+
+autoscaling:
+  cpu: 65
+  memory: 50
+  minReplicas: 3
+  maxReplicas: 6

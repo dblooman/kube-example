@@ -1,0 +1,106 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: { { include "scala-service.fullname" . } }
+  namespace: { { .Values.namespace } }
+  labels:
+    env_name: { { .Values.envname } }
+    service_domain: { { .Values.service_domain } }
+    service_group: { { .Values.service_group } }
+    service_name: { { .Values.service_name } }
+    service_role: { { .Values.service_role } }
+    app.kubernetes.io/name: { { include "scala-service.name" . } }
+
+spec:
+  replicas: { { .Values.replicaCount } }
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: { { include "scala-service.name" . } }
+  template:
+    metadata:
+      namespace: { { .Values.namespace } }
+      annotations:
+        checksum/config:
+          {
+            {
+              include (print $.Template.BasePath "/configmap.yaml") . | sha256sum,
+            },
+          }
+        checksum/config-logging:
+          {
+            {
+              include (print $.Template.BasePath "/log_configmap.yaml") . | sha256sum,
+            },
+          }
+        checksum/secrets:
+          {
+            {
+              include (print $.Template.BasePath "/secrets.yaml") . | sha256sum,
+            },
+          }
+        checksum/hpa:
+          {
+            {
+              include (print $.Template.BasePath "/autoscaling.yaml") . | sha256sum,
+            },
+          }
+        checksum/service:
+          {
+            {
+              include (print $.Template.BasePath "/service.yaml") . | sha256sum,
+            },
+          }
+        checksum/pdb:
+          { { include (print $.Template.BasePath "/pdb.yaml") . | sha256sum } }
+        iam.amazonaws.com/role: { { .Values.iamRoleARN } }
+      labels:
+        env_name: { { .Values.envname } }
+        service_domain: { { .Values.service_domain } }
+        service_group: { { .Values.service_group } }
+        service_name: { { .Values.service_name } }
+        service_role: { { .Values.service_role } }
+        app.kubernetes.io/name: { { include "scala-service.name" . } }
+        app: { { include "scala-service.name" . } }
+        role: rolling-update
+    spec:
+      containers:
+        - name: { { include "scala-service.name" . } }
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: { { .Values.image.pullPolicy } }
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 8080
+          livenessProbe:
+            initialDelaySeconds: 5
+            timeoutSeconds: 2
+            periodSeconds: 10
+            failureThreshold: 3
+            httpGet:
+              path: /status
+              port: 8080
+          readinessProbe:
+            initialDelaySeconds: 5
+            timeoutSeconds: 2
+            periodSeconds: 10
+            failureThreshold: 3
+            httpGet:
+              path: /status
+              port: 8080
+          envFrom:
+            - configMapRef:
+                name: { { include "scala-service.fullname" . } }
+            - secretRef:
+                name: { { include "scala-service.fullname" . } }
+          resources:
+            requests:
+              memory: { { .Values.resources.requests.memory } }
+              cpu: { { .Values.resources.requests.cpu } }
+            limits:
+              memory: { { .Values.resources.limits.memory } }
+              cpu: { { .Values.resources.limits.cpu } }

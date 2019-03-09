@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: { { include "example-service.fullname" . } }
+  namespace: { { .Values.namespace } }
+  labels:
+    env_name: { { .Values.envname } }
+    app.kubernetes.io/name: { { include "example-service.name" . } }
+spec:
+  type: { { .Values.service.type } }
+  ports:
+    - name: http
+      port: { { .Values.service.port } }
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: { { include "example-service.name" . } }
